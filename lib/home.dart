@@ -8,11 +8,9 @@ import 'package:control_app/widgets/line_titles.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:control_app/Screens/developers.dart';
-import 'package:fast_csv/fast_csv.dart' as _fast_csv;
-
-import 'models/point.dart';
 
 class Home extends StatefulWidget {
   final BluetoothDevice server;
@@ -87,8 +85,10 @@ class _HomeState extends State<Home> {
           level = x;
           print('XXXXX' + level);
 
-          spots3.add(FlSpot(
-              (spots3.length + 1).toDouble(), int.parse(level).toDouble()));
+          setState(() {
+            signal3.add(
+                FlSpot((spots3.length + 1).toDouble(), double.parse(level)));
+          });
         } catch (e) {
           // level = '00.0';
         }
@@ -197,6 +197,7 @@ class _HomeState extends State<Home> {
     timer = Timer.periodic(Duration(milliseconds: 1000), (Timer t) {
       int index1 = lastTime % signal1.length;
       int index2 = lastTime % signal2.length;
+      int index3 = lastTime % signal3.length;
 
       setState(() {
         if (!ispaused) {
@@ -204,19 +205,18 @@ class _HomeState extends State<Home> {
               FlSpot(lastTime.toDouble(), signal1[index1].y.toDouble() / 10));
           spots2.add(
               FlSpot(lastTime.toDouble(), signal2[index2].y.toDouble() / 10));
-          // spots3.add(
-          //     FlSpot(lastTime.toDouble(), signal2[index].y.toDouble() + 500));
+          spots3.add(FlSpot(lastTime.toDouble(), signal3[index3].y.toDouble()));
 
           lastTime++;
           if (lastTime == (n + 1) * m + n) {
             calcRAndXParams();
           } else if (lastTime % n == 0 && lastTime > n * m) {
-            List x = spots1.sublist(samplesMean.length, spots1.length);
-            print("Last Time: $lastTime");
-            print("spots1 - ${spots1.length}: " + spots1.toString());
-            print("samplesMean - ${samplesMean.length}: " +
-                samplesMean.toString());
-            print("sub: " + x.toString());
+            List x = spots1.sublist(spots1.length - (m * n), spots1.length);
+            // print("Last Time: $lastTime");
+            // print("spots1 - ${spots1.length}: " + spots1.toString());
+            // print("samplesMean - ${samplesMean.length - (m * n)}: " +
+            //     samplesMean.toString());
+            // print("sub: " + x.toString());
             getNewSamples(x);
           }
         }
@@ -227,20 +227,21 @@ class _HomeState extends State<Home> {
   List<double> r = [], xBar = [];
 
   getNewSamples(List<FlSpot> newSample) {
-    print(newSample.toString());
+    // print(newSample.toString());
 
     /// calc r and x bar
     for (var i = 0; i < m; i++) {
-      print("loop$i: ${(n * i)} ${(n * i) + n} ${newSample.length}");
+      // print("loop$i: ${(n * i)} ${(n * i) + n} ${newSample.length}");
 
       /// calc r
-      r.add(newSample
+      double ri = newSample
               .sublist((n * i), (n * i) + n)
               .reduce((curr, next) => curr.y > next.y ? curr : next)
               .y -
-          newSample.reduce((curr, next) => curr.y < next.y ? curr : next).y);
+          newSample.reduce((curr, next) => curr.y < next.y ? curr : next).y;
+      r.add(ri);
 
-      samplesRange.add(FlSpot(samplesRange.length + 1.toDouble(), r[i]));
+      samplesRange.add(FlSpot((samplesRange.length + 1).toDouble(), ri));
 
       /// calc x bar
       double sumX = 0;
@@ -248,7 +249,27 @@ class _HomeState extends State<Home> {
         sumX += element.y;
       });
       xBar.add(sumX / n);
-      samplesMean.add(FlSpot(samplesMean.length + 1.toDouble(), xBar[i]));
+
+      samplesMean.add(FlSpot((samplesMean.length + 1).toDouble(), sumX / n));
+      if (isRChart && samplesMean.length > n * m) {
+        if (samplesRange.last.y > uclR || samplesRange.last.y < lclR) {
+          FlutterRingtonePlayer.play(
+            fromAsset: "assets/alarm.mp3", // will be the sound on Android
+            // will be the sound on iOS
+          );
+        } else {
+          FlutterRingtonePlayer.stop();
+        }
+      } else if (!isRChart && samplesRange.length > n * m) {
+        if (samplesMean.last.y > uclX || samplesMean.last.y < lclX) {
+          FlutterRingtonePlayer.play(
+            fromAsset: "assets/alarm.mp3", // will be the sound on Android
+            // will be the sound on iOS
+          );
+        } else {
+          FlutterRingtonePlayer.stop();
+        }
+      }
     }
   }
 
@@ -272,13 +293,14 @@ class _HomeState extends State<Home> {
     /// calc r and x bar
     for (var i = 0; i < m; i++) {
       /// calc r
-      r.add(samples
+      double ri = samples
               .sublist((n * i), (n * i) + n)
               .reduce((curr, next) => curr.y > next.y ? curr : next)
               .y -
-          samples.reduce((curr, next) => curr.y < next.y ? curr : next).y);
-      rBar += r[i];
-      samplesRange.add(FlSpot(samplesRange.length + 1.toDouble(), r[i]));
+          samples.reduce((curr, next) => curr.y < next.y ? curr : next).y;
+      r.add(ri);
+      rBar += ri;
+      samplesRange.add(FlSpot(samplesRange.length.toDouble(), ri));
 
       /// calc x bar
       double sumX = 0;
@@ -286,8 +308,8 @@ class _HomeState extends State<Home> {
         sumX += element.y;
       });
       xBar.add(sumX / n);
-      samplesMean.add(FlSpot(samplesMean.length + 1.toDouble(), xBar[i]));
-      xDBar += xBar[i];
+      samplesMean.add(FlSpot(samplesMean.length.toDouble(), sumX / n));
+      xDBar += sumX / n;
     }
 
     /// calc r bar
@@ -311,16 +333,17 @@ class _HomeState extends State<Home> {
   List<FlSpot> spots1 = [FlSpot(0, 0)];
   List<FlSpot> spots2 = [FlSpot(0, 0)];
   List<FlSpot> spots3 = [FlSpot(0, 0)];
+  List<FlSpot> signal3 = [FlSpot(0, 0)];
   List<FlSpot> samplesMean = [FlSpot(0, 0)];
   List<FlSpot> samplesRange = [FlSpot(0, 0)];
 
   /// r and x charts params
-  double uclR = 0;
+  double uclR = 1;
   double clR = 0;
-  double lclR = 0;
-  double uclX = 0;
+  double lclR = -1;
+  double uclX = 1;
   double clX = 0;
-  double lclX = 0;
+  double lclX = -1;
   int n = 3, m = 3;
   double a2 = 1.02, d3 = 0, d4 = 2.57;
 
@@ -636,7 +659,7 @@ class _HomeState extends State<Home> {
                               child: LineChart(
                                 LineChartData(
                                   minX: 0,
-                                  maxX: lastTime.toDouble(),
+                                  maxX: samplesMean.length.toDouble(),
                                   minY: isRChart ? lclR - 500 : lclX - 500,
                                   maxY: isRChart ? uclR + 500 : uclX + 500,
                                   titlesData: LineTitles.getTitleData(),
@@ -700,6 +723,7 @@ class _HomeState extends State<Home> {
                                       colors: gradientColorsXR,
                                       barWidth: 3,
                                       aboveBarData: BarAreaData(
+                                        show: true,
                                         colors: gradientColorsXR
                                             .map((color) =>
                                                 color.withOpacity(0.3))
@@ -733,6 +757,7 @@ class _HomeState extends State<Home> {
                                       colors: gradientColorsXR,
                                       barWidth: 3,
                                       belowBarData: BarAreaData(
+                                        show: true,
                                         colors: gradientColorsXR
                                             .map((color) =>
                                                 color.withOpacity(0.3))

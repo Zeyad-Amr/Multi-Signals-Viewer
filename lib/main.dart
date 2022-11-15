@@ -16,13 +16,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Stepalyzer',
+        title: 'Multi Signals Viewer',
         theme: ThemeData(
           primaryColor: Colors.grey[900],
         ),
-        home: Home(
-          server: BluetoothDevice(address: "Zoz"),
-        ));
+        home: SplashScreen());
   }
 }
 

@@ -58,7 +58,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
-                  child: Text('Restrictions',
+                  child: Text('Pulse oximeter:',
                       style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -69,28 +69,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 15),
               child: Text(
-                  '1. For usage, the patient is suffering from an injury causes knee Flexion or Extension issues.',
+                  '1. The module uses a simple two-wire I2C interface for communication with the microcontroller. It has a fixed I2C address: 0xAEHEX (for write operation) and 0xAFHEX (for read operation)',
                   style: TextStyle(fontSize: 20, color: Colors.black)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 15),
               child: Text(
-                  '2. Knee adduction or abduction are excluded from our analysis.',
+                  '2. Pulse oximetry is based on the principle that the amount of RED and IR light absorbed varies depending on the amount of oxygen in your blood.',
                   style: TextStyle(fontSize: 20, color: Colors.black)),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 10, 15),
-              child: Text(
-                  '3. By using an elastic knee band and by fixing the used rounded sensor (FSR) pointing its rounded head slightly beneath the patella’s knee.',
-                  style: TextStyle(fontSize: 20, color: Colors.black)),
-            ),
-            Expanded(
-                child: Center(
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.6,
-                child: Image.asset('assets/warning.png'),
-              ),
-            ))
           ],
         ),
       ),
