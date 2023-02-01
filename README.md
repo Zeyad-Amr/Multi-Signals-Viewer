@@ -1,6 +1,14 @@
 # Multi-Signals-Viewer
-Flutter Mobile app displays multi signals and calculates
+- Flutter Mobile app displays multi signals.
+- Ploting X and R Charts.
+- Alarming at abnormal samples
+
+## Technologies & Tools
+- Flutter
+- Arduino
+- Bluetooth Module
+- Pulse Oximeter
 
 ## Demo
-Uploading Record_2022-11-25-11-11-17.mp4…
+https://user-images.githubusercontent.com/68791488/215937130-49fd90bf-f97b-4509-958e-b8c946855ded.mp4
 
